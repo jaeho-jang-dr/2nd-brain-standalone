@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="2nd Brain">
+    <meta name="theme-color" content="#1a1a1a">
+    
+    <title>🧠 2nd Brain - AI Memory Assistant</title>
+    
+    <!-- PWA 매니페스트 -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <!-- iPhone 16 Pro Dynamic Island 대응 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <style>
+        /* 🎨 iPhone 16 Pro 최적화 스타일 */
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #FF9500;
+            --background-dark: #000000;
+            --background-card: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --safe-area-top: env(safe-area-inset-top);
+            --safe-area-bottom: env(safe-area-inset-bottom);
+            --safe-area-left: env(safe-area-inset-left);
+            --safe-area-right: env(safe-area-inset-right);
+            --dynamic-island-height: 37px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            height: 100vh;
+            height: 100dvh;
+        }
+
+        .safe-area-top {
+            padding-top: calc(var(--safe-area-top) + 10px);
+        }
+
+        .safe-area-bottom {
+            padding-bottom: calc(var(--safe-area-bottom) + 10px);
+        }
+
+        /* 메인 네비게이션 */
+        .main-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(28, 28, 30, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            max-width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .brain-icon {
+            font-size: 24px;
+        }
+
+        .app-name {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .nav-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            padding: 8px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 메인 컨테이너 */
+        .main-container {
+            padding-top: 80px;
+            padding-bottom: 100px;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
+        /* 음성 인터페이스 */
+        .voice-interface {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .voice-container {
+            background: var(--background-card);
+            border-radius: 20px;
+            padding: 30px 20px;
+            margin-bottom: 20px;
+        }
+
+        .voice-status {
+            margin-bottom: 20px;
+        }
+
+        .status-indicator {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .status-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .voice-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 15px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        .voice-btn.secondary {
+            background: var(--secondary-color);
+        }
+
+        .voice-btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-icon {
+            font-size: 24px;
+        }
+
+        /* 빠른 입력 */
+        .quick-input {
+            padding: 0 20px 20px;
+        }
+
+        .quick-input-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .quick-input-header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .expand-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 24px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .quick-input-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .quick-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 20px 10px;
+            background: var(--background-card);
+            border: none;
+            border-radius: 15px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-btn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .quick-icon {
+            font-size: 28px;
+        }
+
+        .quick-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 최근 기억들 */
+        .recent-memories {
+            padding: 0 20px 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .section-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .view-all-btn {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .memories-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .memory-card {
+            background: var(--background-card);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .memory-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .memory-type {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .memory-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .memory-content {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        /* 스마트 검색 */
+        .smart-search {
+            padding: 0 20px 20px;
+        }
+
+        .search-container {
+            background: var(--background-card);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .search-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input-group input {
+            flex: 1;
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .search-input-group input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .search-btn, .voice-search-btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .voice-search-btn {
+            background: var(--secondary-color);
+        }
+
+        .search-suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .suggestion-item:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* 플로팅 액션 버튼 */
+        .fab-container {
+            position: fixed;
+            bottom: calc(var(--safe-area-bottom) + 20px);
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0, 122, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .fab:active {
+            transform: scale(0.95);
+        }
+
+        .fab-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.2s;
+            pointer-events: none;
+        }
+
+        .fab-menu.active {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .sub-fab {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            border: none;
+            background: var(--background-card);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 모달 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--background-card);
+            border-radius: 20px;
+            margin: 20px;
+            max-width: 400px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 0 20px 20px;
+        }
+
+        /* 로딩 오버레이 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .loading-spinner {
+            text-align: center;
+        }
+
+        .spinner-brain {
+            font-size: 48px;
+            animation: pulse 2s infinite;
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        /* 토스트 메시지 */
+        .toast {
+            position: fixed;
+            bottom: calc(var(--safe-area-bottom) + 100px);
+            left: 20px;
+            right: 20px;
+            background: var(--background-card);
+            color: var(--text-primary);
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 4000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: #FF3B30;
+        }
+
+        .toast.success {
+            background: #34C759;
+        }
+
+        .toast.warning {
+            background: #FF9500;
+        }
+
+        /* 반응형 조정 */
+        @media (max-width: 375px) {
+            .quick-input-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .voice-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        /* Dynamic Island 대응 */
+        @supports (top: env(safe-area-inset-top)) {
+            .main-nav {
+                padding-top: env(safe-area-inset-top);
+            }
+        }
+
+        /* 애니메이션 최적화 */
+        @media (prefers-reduced-motion: no-preference) {
+            .quick-btn, .voice-btn, .fab {
+                transition: transform 0.1s ease-out;
+            }
+        }
+
+        /* 오프라인 표시 */
+        .offline-banner {
+            position: fixed;
+            top: calc(var(--safe-area-top) + 60px);
+            left: 20px;
+            right: 20px;
+            background: var(--secondary-color);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            z-index: 1500;
+            transform: translateY(-100px);
+            transition: transform 0.3s;
+        }
+
+        .offline-banner.show {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- 오프라인 배너 -->
+    <div class="offline-banner" id="offlineBanner">
+        📴 오프라인 모드 - 일부 기능이 제한됩니다
+    </div>
+
+    <!-- 🏠 메인 네비게이션 -->
+    <nav class="main-nav safe-area-top">
+        <div class="nav-container">
+            <div class="nav-left">
+                <div class="logo">
+                    <span class="brain-icon">🧠</span>
+                    <span class="app-name">2nd Brain</span>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="nav-btn" id="settingsBtn">⚙️</button>
+                <button class="nav-btn" id="profileBtn">👤</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 📱 메인 컨테이너 -->
+    <main class="main-container safe-area-bottom">
+        
+        <!-- 🎤 음성 인터페이스 -->
+        <section class="voice-interface" id="voiceInterface">
+            <div class="voice-container">
+                <div class="voice-status" id="voiceStatus">
+                    <div class="status-indicator">💭</div>
+                    <div class="status-text">무엇을 도와드릴까요?</div>
+                </div>
+                
+                <div class="voice-controls">
+                    <button class="voice-btn primary" id="voiceRecordBtn">
+                        <span class="btn-icon">🎤</span>
+                        <span class="btn-text">말하기</span>
+                    </button>
+                    
+                    <button class="voice-btn secondary" id="voiceSearchBtn">
+                        <span class="btn-icon">🔍</span>
+                        <span class="btn-text">검색</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 📋 빠른 입력 메뉴 -->
+        <section class="quick-input">
+            <div class="quick-input-header">
+                <h2>📝 빠른 기록</h2>
+                <button class="expand-btn" id="expandQuickInput">+</button>
+            </div>
+            
+            <div class="quick-input-grid" id="quickInputGrid">
+                <button class="quick-btn" data-type="photo">
+                    <div class="quick-icon">📸</div>
+                    <div class="quick-label">사진</div>
+                </button>
+                
+                <button class="quick-btn" data-type="video">
+                    <div class="quick-icon">🎥</div>
+                    <div class="quick-label">동영상</div>
+                </button>
+                
+                <button class="quick-btn" data-type="voice">
+                    <div class="quick-icon">🎙️</div>
+                    <div class="quick-label">음성메모</div>
+                </button>
+                
+                <button class="quick-btn" data-type="text">
+                    <div class="quick-icon">📝</div>
+                    <div class="quick-label">텍스트</div>
+                </button>
+                
+                <button class="quick-btn" data-type="document">
+                    <div class="quick-icon">📄</div>
+                    <div class="quick-label">문서</div>
+                </button>
+                
+                <button class="quick-btn" data-type="location">
+                    <div class="quick-icon">📍</div>
+                    <div class="quick-label">위치</div>
+                </button>
+            </div>
+        </section>
+
+        <!-- 🕐 최근 기억들 -->
+        <section class="recent-memories">
+            <div class="section-header">
+                <h2>🕐 최근 기억들</h2>
+                <button class="view-all-btn" id="viewAllMemories">전체보기</button>
+            </div>
+            
+            <div class="memories-container" id="recentMemoriesContainer">
+                <!-- 동적으로 생성되는 메모리 카드들 -->
+                <div class="memory-card">
+                    <div class="memory-header">
+                        <span class="memory-type">📝 텍스트</span>
+                        <span class="memory-time">방금 전</span>
+                    </div>
+                    <div class="memory-content">2nd Brain 앱을 시작했습니다!</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 🔍 스마트 검색 -->
+        <section class="smart-search">
+            <div class="search-header">
+                <h2>🔍 스마트 검색</h2>
+            </div>
+            
+            <div class="search-container">
+                <div class="search-input-group">
+                    <input type="text" id="searchInput" placeholder="'어제 찍은 사진' 또는 '중요한 메모'를 검색해보세요">
+                    <button class="search-btn" id="searchBtn">🔍</button>
+                    <button class="voice-search-btn" id="voiceSearchInput">🎤</button>
+                </div>
+                
+                <div class="search-suggestions" id="searchSuggestions">
+                    <div class="suggestion-item">💡 "오늘 기록한 내용들"</div>
+                    <div class="suggestion-item">💡 "사진 파일들"</div>
+                    <div class="suggestion-item">💡 "음성 메모들"</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 🎯 플로팅 액션 버튼 -->
+    <div class="fab-container">
+        <button class="fab main-fab" id="mainFab">
+            <span class="fab-icon">➕</span>
+        </button>
+        
+        <div class="fab-menu" id="fabMenu">
+            <button class="fab sub-fab" data-action="voice">🎤</button>
+            <button class="fab sub-fab" data-action="photo">📸</button>
+            <button class="fab sub-fab" data-action="video">🎥</button>
+            <button class="fab sub-fab" data-action="text">📝</button>
+        </div>
+    </div>
+
+    <!-- 🔄 로딩 인디케이터 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner-brain">🧠</div>
+            <div class="loading-text">처리 중입니다...</div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="claude-ai.js"></script>
+    <script src="app.js"></script>
+    
+    <!-- 🔧 서비스 워커 등록 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(registration => console.log('SW registered'))
+                .catch(error => console.log('SW registration failed'));
+        }
+    </script>
+</body>
+</html>

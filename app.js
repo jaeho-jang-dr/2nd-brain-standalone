@@ -1,6 +1,7 @@
-// 📱 2nd Brain - 아이폰 단독 실행용 앱 v1.00.01
+// 📱 2nd Brain - 아이폰 단독 실행용 앱 v1.00.05
 // 서버 없이 클라이언트 사이드에서만 동작
-// 🗣️ 완전한 대화형 AI - 중간 입력 및 Claude 인사 기능
+// 🗣️ 완전한 대화형 AI - 중간 입력, Claude 인사, 이벤트 관리 기능
+// 🍎 iOS Safari 완벽 호환 - 터치 이벤트, 엔터키, 관리자 로그인, 설정 화면
 
 class StandaloneBrainApp {
     constructor() {
@@ -34,6 +35,9 @@ class StandaloneBrainApp {
     async init() {
         try {
             this.showLoadingScreen('🚀 2nd Brain 초기화 중...');
+            
+            // 모바일 환경 감지 및 디버깅 정보 출력
+            this.detectMobileEnvironment();
             
             // 인증 시스템 초기화
             this.authManager = new AuthManager();
@@ -212,6 +216,7 @@ class StandaloneBrainApp {
 
     // 🎮 이벤트 리스너 설정
     setupEventListeners() {
+        console.log('🎮 Setting up event listeners for mobile compatibility');
         // 음성 녹음 버튼
         document.getElementById('voiceRecordBtn')?.addEventListener('click', () => {
             this.toggleVoiceRecording();
@@ -222,9 +227,9 @@ class StandaloneBrainApp {
             this.startVoiceSearch();
         });
         
-        // 빠른 입력 버튼들
+        // 빠른 입력 버튼들 - 모바일 호환성 개선
         document.querySelectorAll('.quick-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            this.addMobileCompatibleEventListener(btn, (e) => {
                 const type = e.currentTarget.dataset.type;
                 this.handleQuickInput(type);
             });
@@ -241,65 +246,179 @@ class StandaloneBrainApp {
             }
         });
         
-        // 플로팅 액션 버튼
-        document.getElementById('mainFab')?.addEventListener('click', () => {
-            this.toggleFABMenu();
-        });
+        // 플로팅 액션 버튼 - 모바일 호환성 개선
+        const mainFab = document.getElementById('mainFab');
+        if (mainFab) {
+            this.addMobileCompatibleEventListener(mainFab, () => {
+                this.toggleFABMenu();
+            });
+        }
         
         document.querySelectorAll('.sub-fab').forEach(fab => {
-            fab.addEventListener('click', (e) => {
+            this.addMobileCompatibleEventListener(fab, (e) => {
                 const action = e.currentTarget.dataset.action;
                 this.handleFABAction(action);
             });
         });
 
-        // 인증 관련 버튼들
-        document.getElementById('loginBtn')?.addEventListener('click', () => {
-            this.authManager.showLoginModal();
-        });
+        // 인증 관련 버튼들 - 모바일 호환성 개선
+        const loginBtn = document.getElementById('loginBtn');
+        if (loginBtn) {
+            console.log('🔑 Setting up login button with mobile compatibility');
+            this.addMobileCompatibleEventListener(loginBtn, () => {
+                console.log('🔑 Login button clicked');
+                this.authManager.showLoginModal();
+            });
+        }
 
-        document.getElementById('logoutBtn')?.addEventListener('click', () => {
-            this.authManager.logout();
-        });
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            this.addMobileCompatibleEventListener(logoutBtn, () => {
+                this.authManager.logout();
+            });
+        }
 
-        // 관리자 대시보드 버튼
-        document.getElementById('adminBtn')?.addEventListener('click', () => {
-            this.openAdminDashboard();
-        });
+        // 관리자 대시보드 버튼 - 모바일 호환성 개선
+        const adminBtn = document.getElementById('adminBtn');
+        if (adminBtn) {
+            console.log('👑 Setting up admin button with mobile compatibility');
+            this.addMobileCompatibleEventListener(adminBtn, () => {
+                console.log('👑 Admin button clicked');
+                this.openAdminDashboard();
+            });
+        }
 
-        // Claude AI 채팅 관련
-        document.getElementById('chatSendBtn')?.addEventListener('click', () => {
-            this.sendChatMessage();
-        });
-
-        document.getElementById('chatInput')?.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        // Claude AI 채팅 관련 - 모바일 호환성 개선
+        const chatSendBtn = document.getElementById('chatSendBtn');
+        if (chatSendBtn) {
+            this.addMobileCompatibleEventListener(chatSendBtn, () => {
                 this.sendChatMessage();
+            });
+        }
+
+        // iOS Safari 최적화된 채팅 입력 처리
+        const chatInput = document.getElementById('chatInput');
+        const chatForm = document.getElementById('chatForm');
+        
+        if (chatInput && chatForm) {
+            console.log('💬 Setting up iOS Safari optimized chat input handlers');
+            
+            // iOS Safari 감지
+            const isIOSSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+            
+            if (isIOSSafari) {
+                console.log('📱 iOS Safari detected - using optimized event handling');
+                
+                // iOS Safari 전용 이벤트 핸들러
+                let lastInputTime = 0;
+                let inputValue = '';
+                
+                // 입력 감지
+                chatInput.addEventListener('input', (e) => {
+                    inputValue = e.target.value;
+                    lastInputTime = Date.now();
+                });
+                
+                // iOS Safari에서 Enter 키 처리
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('💬 iOS Safari Enter key detected');
+                        
+                        // 입력값이 있으면 메시지 전송
+                        if (chatInput.value.trim()) {
+                            this.sendChatMessage();
+                        }
+                    }
+                });
+                
+                // iOS Safari 키보드 "전송" 버튼 처리
+                chatInput.addEventListener('keyup', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        console.log('💬 iOS Safari keyup Enter detected');
+                        
+                        // 중복 전송 방지를 위한 시간 체크
+                        if (Date.now() - lastInputTime > 50) {
+                            if (chatInput.value.trim()) {
+                                setTimeout(() => {
+                                    this.sendChatMessage();
+                                }, 10);
+                            }
+                        }
+                    }
+                });
+            } else {
+                // 일반 브라우저용 이벤트 핸들러
+                chatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        console.log('💬 Enter key detected (non-iOS)');
+                        this.sendChatMessage();
+                    }
+                });
             }
-        });
+            
+            // 폼 제출 이벤트 (모든 브라우저 공통)
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('💬 Form submitted - preventing default and calling sendChatMessage');
+                this.sendChatMessage();
+                return false;
+            });
+            
+            // iOS Safari 포커스 최적화
+            if (isIOSSafari) {
+                chatInput.addEventListener('focus', () => {
+                    console.log('💬 iOS Safari input focused');
+                    // iOS Safari에서 키보드가 올라올 때 스크롤 조정
+                    setTimeout(() => {
+                        chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                });
+                
+                chatInput.addEventListener('blur', () => {
+                    console.log('💬 iOS Safari input blurred');
+                });
+            }
+        }
 
-        document.getElementById('chatVoiceBtn')?.addEventListener('click', () => {
-            this.startVoiceChatInput();
-        });
+        // 채팅 음성 버튼 - 모바일 호환성 개선
+        const chatVoiceBtn = document.getElementById('chatVoiceBtn');
+        if (chatVoiceBtn) {
+            this.addMobileCompatibleEventListener(chatVoiceBtn, () => {
+                this.startVoiceChatInput();
+            });
+        }
 
-        // 채팅 사진 버튼
-        document.getElementById('chatPhotoBtn')?.addEventListener('click', () => {
-            this.openChatPhotoInput();
-        });
+        // 채팅 사진 버튼 - 모바일 호환성 개선
+        const chatPhotoBtn = document.getElementById('chatPhotoBtn');
+        if (chatPhotoBtn) {
+            this.addMobileCompatibleEventListener(chatPhotoBtn, () => {
+                this.openChatPhotoInput();
+            });
+        }
 
-        // 채팅 위치 버튼
-        document.getElementById('chatLocationBtn')?.addEventListener('click', () => {
-            this.addChatLocation();
-        });
+        // 채팅 위치 버튼 - 모바일 호환성 개선
+        const chatLocationBtn = document.getElementById('chatLocationBtn');
+        if (chatLocationBtn) {
+            this.addMobileCompatibleEventListener(chatLocationBtn, () => {
+                this.addChatLocation();
+            });
+        }
 
         // 사진 파일 선택 이벤트
         document.getElementById('chatPhotoInput')?.addEventListener('change', (e) => {
             this.handleChatPhotoUpload(e);
         });
 
-        document.getElementById('minimizeChatBtn')?.addEventListener('click', () => {
-            this.toggleChatMinimize();
-        });
+        const minimizeChatBtn = document.getElementById('minimizeChatBtn');
+        if (minimizeChatBtn) {
+            this.addMobileCompatibleEventListener(minimizeChatBtn, () => {
+                this.toggleChatMinimize();
+            });
+        }
 
         // 채팅 최소화 상태에서 헤더 클릭으로 복원
         document.addEventListener('click', (e) => {
@@ -787,6 +906,277 @@ class StandaloneBrainApp {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
     }
 
+    // 📱 iOS Safari 최적화된 모바일 환경 감지 및 디버깅
+    detectMobileEnvironment() {
+        const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const isIOSSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const userAgent = navigator.userAgent;
+        const viewport = {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            devicePixelRatio: window.devicePixelRatio || 1,
+            availWidth: screen.availWidth,
+            availHeight: screen.availHeight
+        };
+        
+        // iOS Safari 특화 정보
+        const iOSInfo = {
+            standalone: window.navigator.standalone,
+            statusBarHeight: isIOS ? (window.screen.height - window.innerHeight) : 0,
+            safeAreaInsets: {
+                top: this.getCSSVariableValue('--safe-area-inset-top'),
+                bottom: this.getCSSVariableValue('--safe-area-inset-bottom'),
+                left: this.getCSSVariableValue('--safe-area-inset-left'),
+                right: this.getCSSVariableValue('--safe-area-inset-right')
+            }
+        };
+        
+        console.group('📱 iOS Safari Optimized Mobile Environment Detection');
+        console.log('🔍 User Agent:', userAgent);
+        console.log('📱 Is Mobile:', isMobile);
+        console.log('🍎 Is iOS:', isIOS);
+        console.log('🌍 Is iOS Safari:', isIOSSafari);
+        console.log('👆 Touch Support:', isTouchDevice);
+        console.log('📐 Viewport:', viewport);
+        console.log('🍎 iOS Info:', iOSInfo);
+        console.log('🌐 Online Status:', navigator.onLine);
+        console.log('🔊 Media Devices:', !!navigator.mediaDevices);
+        console.log('🎤 Speech Recognition:', !!(window.SpeechRecognition || window.webkitSpeechRecognition));
+        console.log('📍 Geolocation:', !!navigator.geolocation);
+        
+        // iOS Safari 특화 기능 검사
+        if (isIOSSafari) {
+            console.group('🔍 iOS Safari Specific Features');
+            console.log('📱 PWA Standalone Mode:', iOSInfo.standalone);
+            console.log('📏 Status Bar Height:', iOSInfo.statusBarHeight + 'px');
+            console.log('🛡️ Safe Area Insets:', iOSInfo.safeAreaInsets);
+            console.log('🔧 CSS env() Support:', 'CSS.supports' in window ? CSS.supports('top: env(safe-area-inset-top)') : 'Unknown');
+            console.log('⚡ Hardware Acceleration:', 'transform3d' in document.createElement('div').style);
+            console.log('🎯 Touch Action Support:', 'touchAction' in document.createElement('div').style);
+            console.log('📱 Visual Viewport API:', !!window.visualViewport);
+            console.groupEnd();
+            
+            // iOS Safari 특화 이벤트 리스너 추가
+            this.setupIOSSafariOptimizations();
+        }
+        
+        console.groupEnd();
+        
+        // 호환성 경고 및 최적화
+        if (isMobile && !isTouchDevice) {
+            console.warn('⚠️ Mobile device detected but touch events not supported');
+            this.showToast('터치 이벤트를 지원하지 않는 모바일 브라우저입니다.', 'warning');
+        }
+        
+        if (viewport.width < 320 || viewport.height < 480) {
+            console.warn('⚠️ Very small screen detected:', viewport);
+            this.showToast('화면이 너무 작습니다. 일부 기능이 제한될 수 있습니다.', 'warning');
+        }
+        
+        if (isIOSSafari) {
+            console.log('🔧 iOS Safari optimizations enabled');
+            this.showToast('iOS Safari 최적화가 적용되었습니다.', 'success');
+        }
+        
+        return { isMobile, isTouchDevice, isIOSSafari, isIOS, viewport, userAgent, iOSInfo };
+    }
+    
+    // CSS 변수 값 가져오기 헬퍼
+    getCSSVariableValue(variable) {
+        if (typeof getComputedStyle !== 'undefined') {
+            return getComputedStyle(document.documentElement).getPropertyValue(variable) || '0px';
+        }
+        return '0px';
+    }
+    
+    // iOS Safari 특화 최적화 설정
+    setupIOSSafariOptimizations() {
+        console.log('🔧 Setting up iOS Safari specific optimizations');
+        
+        // Visual Viewport API 지원 시 키보드 대응
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                console.log('📱 iOS Safari viewport resized:', {
+                    width: window.visualViewport.width,
+                    height: window.visualViewport.height,
+                    offsetTop: window.visualViewport.offsetTop,
+                    offsetLeft: window.visualViewport.offsetLeft
+                });
+                
+                // 키보드가 올라왔을 때 UI 조정
+                const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.75;
+                document.body.classList.toggle('keyboard-visible', isKeyboardVisible);
+            });
+        }
+        
+        // iOS Safari 스크롤 최적화
+        document.addEventListener('touchmove', (e) => {
+            // 스크롤 가능한 영역이 아닌 경우 기본 동작 방지
+            const scrollableElements = ['input', 'textarea', 'select'];
+            const target = e.target;
+            
+            if (!scrollableElements.includes(target.tagName.toLowerCase()) && 
+                !target.closest('.modal-content') && 
+                !target.closest('.chat-messages')) {
+                // Body 스크롤만 허용
+                if (target === document.body) {
+                    return;
+                }
+            }
+        }, { passive: false });
+        
+        // iOS Safari 더블 탭 줌 방지
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, { passive: false });
+        
+        // iOS Safari 300ms 클릭 지연 방지
+        document.addEventListener('touchstart', () => {}, { passive: true });
+        
+        console.log('✅ iOS Safari optimizations applied');
+    }
+
+    // 📱 iOS Safari 최적화된 모바일 호환 이벤트 리스너
+    addMobileCompatibleEventListener(element, callback) {
+        // iOS Safari와 Android Chrome에서 안정적인 터치 이벤트 처리
+        let touchStarted = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchProcessed = false;
+        let touchStartTime = 0;
+        
+        // iOS Safari 감지
+        const isIOSSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+        const isTouchDevice = 'ontouchstart' in window;
+        
+        console.log(`🔧 Setting up mobile event listener for ${element.id || element.className} (iOS Safari: ${isIOSSafari}, Touch: ${isTouchDevice})`);
+        
+        if (isTouchDevice) {
+            // 터치 시작
+            element.addEventListener('touchstart', (e) => {
+                touchStarted = true;
+                touchProcessed = false;
+                touchStartTime = Date.now();
+                
+                const touch = e.touches[0];
+                touchStartX = touch.clientX;
+                touchStartY = touch.clientY;
+                
+                // iOS Safari에서 더 부드러운 시각적 피드백
+                if (isIOSSafari) {
+                    element.style.transition = 'transform 0.1s ease-out, opacity 0.1s ease-out';
+                }
+                element.style.transform = 'scale(0.95)';
+                element.style.opacity = '0.8';
+                
+                console.log(`🔍 Touch start on ${element.id || element.className} (iOS Safari: ${isIOSSafari})`);
+            }, { passive: true });
+            
+            // 터치 종료
+            element.addEventListener('touchend', (e) => {
+                if (touchStarted && !touchProcessed) {
+                    const touchEndTime = Date.now();
+                    const touchDuration = touchEndTime - touchStartTime;
+                    
+                    const touch = e.changedTouches[0];
+                    const touchEndX = touch.clientX;
+                    const touchEndY = touch.clientY;
+                    
+                    // 터치 이동 거리 계산 (스와이프와 구분)
+                    const moveDistance = Math.sqrt(
+                        Math.pow(touchEndX - touchStartX, 2) + 
+                        Math.pow(touchEndY - touchStartY, 2)
+                    );
+                    
+                    // iOS Safari에서 더 관대한 터치 인식 (20px까지, 1초 이내)
+                    const maxMoveDistance = isIOSSafari ? 20 : 15;
+                    const maxTouchDuration = isIOSSafari ? 1000 : 800;
+                    
+                    if (moveDistance < maxMoveDistance && touchDuration < maxTouchDuration) {
+                        console.log(`✅ Valid touch detected - distance: ${moveDistance}px, duration: ${touchDuration}ms`);
+                        touchProcessed = true;
+                        
+                        // iOS Safari에서 더블 탭 방지를 위한 preventDefault
+                        if (isIOSSafari) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                        
+                        // 콜백 실행 전에 시각적 피드백 유지
+                        setTimeout(() => {
+                            try {
+                                callback(e);
+                            } catch (error) {
+                                console.error(`Error in callback for ${element.id || element.className}:`, error);
+                            }
+                        }, isIOSSafari ? 100 : 50);
+                    } else {
+                        console.log(`❌ Touch rejected - distance: ${moveDistance}px, duration: ${touchDuration}ms`);
+                    }
+                    
+                    touchStarted = false;
+                }
+                
+                // 시각적 피드백 제거
+                setTimeout(() => {
+                    element.style.transform = '';
+                    element.style.opacity = '';
+                    if (isIOSSafari) {
+                        element.style.transition = '';
+                    }
+                }, isIOSSafari ? 150 : 100);
+            }, { passive: false });
+            
+            // 터치 취소 (스크롤 등으로 인한)
+            element.addEventListener('touchcancel', () => {
+                touchStarted = false;
+                touchProcessed = false;
+                // 시각적 피드백 제거
+                element.style.transform = '';
+                element.style.opacity = '';
+                if (isIOSSafari) {
+                    element.style.transition = '';
+                }
+                console.log(`🚫 Touch cancelled on ${element.id || element.className}`);
+            }, { passive: true });
+        }
+        
+        // 데스크톱용 클릭 이벤트 또는 터치 미지원 환경
+        element.addEventListener('click', (e) => {
+            if (!isTouchDevice || (!touchProcessed && !touchStarted)) {
+                console.log(`🖱️ Click event on ${element.id || element.className} (fallback or desktop)`);
+                try {
+                    callback(e);
+                } catch (error) {
+                    console.error(`Error in click callback for ${element.id || element.className}:`, error);
+                }
+            } else if (touchProcessed) {
+                // 터치가 이미 처리된 경우 클릭 이벤트 방지
+                e.preventDefault();
+                e.stopPropagation();
+                console.log(`🚫 Click event prevented (touch already processed) for ${element.id || element.className}`);
+            }
+        });
+        
+        // iOS Safari에서 추가 최적화
+        if (isIOSSafari) {
+            // 포커스 가능한 요소에 대한 특별 처리
+            if (element.tagName === 'BUTTON' || element.tagName === 'INPUT') {
+                element.style.touchAction = 'manipulation';
+                element.style.webkitTouchCallout = 'none';
+                element.style.webkitUserSelect = 'none';
+                element.style.userSelect = 'none';
+            }
+        }
+    }
+
     getTypeEmoji(type) {
         const emojis = {
             text: '📝',
@@ -921,8 +1311,13 @@ ${memory.content}
         
         if (!message) return;
         
+        // Prevent double sending
+        if (this._sendingMessage) return;
+        this._sendingMessage = true;
+        
         // 로그인 확인
         if (!this.authManager.isLoggedIn) {
+            this._sendingMessage = false;
             this.authManager.showLoginModal();
             return;
         }
@@ -967,6 +1362,9 @@ ${memory.content}
             
             this.addChatMessage(errorMessage, 'assistant');
             console.error('채팅 오류:', error);
+        } finally {
+            // Reset sending flag
+            this._sendingMessage = false;
         }
     }
 

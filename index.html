@@ -2,20 +2,24 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!-- iOS Safari 최적화 viewport 설정 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, shrink-to-fit=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="2nd Brain">
+    <meta name="apple-touch-fullscreen" content="yes">
     <meta name="theme-color" content="#1a1a1a">
+    <meta name="format-detection" content="telephone=no, date=no, email=no, address=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <!-- iOS Safari 특화 설정 -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="msapplication-tap-highlight" content="no">
     
     <title>🧠 2nd Brain - AI Memory Assistant</title>
     
     <!-- PWA 매니페스트 -->
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    
-    <!-- iPhone 16 Pro Dynamic Island 대응 -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
     <style>
         /* 🎨 iPhone 16 Pro 최적화 스타일 */
@@ -46,6 +50,15 @@
             overflow-x: hidden;
             height: 100vh;
             height: 100dvh;
+            /* iOS Safari 최적화 */
+            -webkit-text-size-adjust: 100%;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+            /* iOS Safari 스크롤 최적화 */
+            -webkit-overflow-scrolling: touch;
+            /* iOS Safari 줌 방지 */
+            touch-action: manipulation;
         }
 
         .safe-area-top {
@@ -62,10 +75,12 @@
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(28, 28, 30, 0.8);
+            background: rgba(28, 28, 30, 0.95);
             backdrop-filter: blur(20px);
             z-index: 1000;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            /* 모바일에서 터치 이벤트가 차단되지 않도록 */
+            pointer-events: auto;
         }
 
         .nav-container {
@@ -97,14 +112,26 @@
         }
 
         .nav-btn {
-            background: none;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             font-size: 20px;
             padding: 8px;
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.1);
             cursor: pointer;
             transition: all 0.2s;
+            /* 모바일 터치 최적화 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 100;
         }
 
         .nav-btn:active {
@@ -226,6 +253,13 @@
             color: var(--text-primary);
             cursor: pointer;
             transition: all 0.2s;
+            /* 모바일 터치 최적화 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 80px;
         }
 
         .quick-btn:active {
@@ -385,6 +419,12 @@
             cursor: pointer;
             box-shadow: 0 4px 20px rgba(0, 122, 255, 0.3);
             transition: all 0.2s;
+            /* 모바일 터치 최적화 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .fab:active {
@@ -420,6 +460,12 @@
             font-size: 20px;
             cursor: pointer;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            /* 모바일 터치 최적화 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         /* 모달 */
@@ -715,11 +761,31 @@
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-primary);
-            font-size: 14px;
+            font-size: 16px; /* iOS Safari 16px minimum to prevent zoom */
+            /* iOS Safari 최적화 */
+            -webkit-appearance: none;
+            -webkit-border-radius: 20px;
+            appearance: none;
+            outline: none;
+            -webkit-user-select: text;
+            user-select: text;
+            -webkit-touch-callout: default;
+            touch-action: manipulation;
+            /* iOS Safari 입력 최적화 */
+            -webkit-text-size-adjust: 100%;
+            transform: translateZ(0); /* Hardware acceleration */
         }
 
         #chatInput::placeholder {
             color: var(--text-secondary);
+        }
+
+        #chatInput:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.15);
+            /* iOS Safari 포커스 최적화 */
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         .chat-voice-btn, .chat-send-btn {
@@ -744,7 +810,7 @@
             color: white;
         }
 
-        /* 채팅 버튼 공통 스타일 */
+        /* 채팅 버튼 공통 스타일 - 모바일 터치 최적화 */
         .chat-btn {
             width: 36px;
             height: 36px;
@@ -757,6 +823,12 @@
             font-size: 14px;
             transition: all 0.2s;
             position: relative;
+            /* 모바일 터치 최적화 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .chat-btn:hover {
@@ -823,6 +895,39 @@
         /* 관리자 전용 요소 숨김 */
         .admin-only {
             display: none !important;
+        }
+
+        /* iOS Safari 키보드 대응 */
+        .keyboard-visible .fab-container {
+            bottom: 10px;
+            transition: bottom 0.3s ease;
+        }
+
+        .keyboard-visible .chat-input-container {
+            padding-bottom: 10px;
+            transition: padding-bottom 0.3s ease;
+        }
+
+        /* iOS Safari 추가 최적화 */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari 전용 스타일 */
+            body {
+                -webkit-user-select: none;
+                -webkit-touch-callout: none;
+                -webkit-tap-highlight-color: transparent;
+            }
+            
+            input, textarea {
+                -webkit-user-select: text;
+                -webkit-touch-callout: default;
+            }
+            
+            button {
+                -webkit-appearance: none;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                touch-action: manipulation;
+            }
         }
 
         /* 설정 모달 스타일 추가 */
@@ -1003,6 +1108,13 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            /* 모바일 터치 최적화 */
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            min-height: 48px;
         }
 
         .auth-btn.primary {
@@ -1188,14 +1300,24 @@
                 </div>
                 
                 <div class="chat-input-container">
-                    <div class="chat-input-group">
-                        <input type="text" id="chatInput" placeholder="Claude에게 메모리에 대해 질문해보세요..." autocomplete="off">
+                    <!-- iOS Safari 최적화된 채팅 입력 폼 -->
+                    <form class="chat-input-group" id="chatForm" action="javascript:void(0);" onsubmit="return window.app && window.app.sendChatMessage(), false;">
+                        <input type="text" 
+                               id="chatInput" 
+                               placeholder="Claude에게 메모리에 대해 질문해보세요..." 
+                               autocomplete="off"
+                               autocapitalize="sentences"
+                               autocorrect="on"
+                               spellcheck="true"
+                               enterkeyhint="send"
+                               inputmode="text"
+                               required>
                         <input type="file" id="chatPhotoInput" accept="image/*" style="display: none;">
-                        <button class="chat-btn photo-btn" id="chatPhotoBtn" title="사진으로 기록하기">📸</button>
-                        <button class="chat-btn voice-btn" id="chatVoiceBtn" title="음성으로 기록하기">🎤</button>
-                        <button class="chat-btn location-btn" id="chatLocationBtn" title="위치 기록하기">📍</button>
-                        <button class="chat-send-btn" id="chatSendBtn">📤</button>
-                    </div>
+                        <button type="button" class="chat-btn photo-btn" id="chatPhotoBtn" title="사진으로 기록하기">📸</button>
+                        <button type="button" class="chat-btn voice-btn" id="chatVoiceBtn" title="음성으로 기록하기">🎤</button>
+                        <button type="button" class="chat-btn location-btn" id="chatLocationBtn" title="위치 기록하기">📍</button>
+                        <button type="submit" class="chat-send-btn" id="chatSendBtn" form="chatForm">📤</button>
+                    </form>
                 </div>
             </div>
         </section>

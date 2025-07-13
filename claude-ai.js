@@ -321,6 +321,106 @@ JSON 형식으로 응답해주세요.`;
             return analysis;
         }
         
+        // 이벤트 기록 명령 (새로 추가)
+        if (lowerMessage.includes('이벤트') && (lowerMessage.includes('기록') || lowerMessage.includes('저장') || lowerMessage.includes('추가'))) {
+            const eventPatterns = [
+                /(.+)\s*이벤트를?\s*(기록|저장|추가)해?줘?/,
+                /이벤트:\s*(.+)/,
+                /이벤트\s*(기록|저장|추가):?\s*(.+)/
+            ];
+            
+            for (const pattern of eventPatterns) {
+                const match = message.match(pattern);
+                if (match) {
+                    const content = (match[1] || match[2] || '').trim();
+                    if (content && content.length > 2) {
+                        if (window.app) {
+                            const memory = window.app.addMemory({
+                                type: 'event',
+                                content: content,
+                                tags: ['이벤트', '채팅', '일정', '기록'],
+                                importance: 7,
+                                eventDate: new Date().toISOString()
+                            });
+                            window.app.updateUI();
+                            return `🎉 이벤트 "${content}"가 성공적으로 기록되었습니다!
+
+📅 **이벤트 정보:**
+• 내용: ${content}
+• 기록 시간: ${new Date().toLocaleString()}
+• 이벤트 ID: ${memory.id}
+
+🔍 **이벤트 조회 방법:**
+• "이벤트 목록 보여줘"
+• "오늘 이벤트 조회"
+• "${content.split(' ')[0]} 이벤트 찾아줘"
+• "이벤트 검색: ${content.split(' ')[0]}"
+
+다른 이벤트도 기록하고 싶으시면 말씀해주세요! 😊`;
+                        }
+                    }
+                }
+            }
+            return `📅 이벤트를 기록해드릴게요! 
+
+**사용법:**
+• "생일파티 이벤트 기록해줘"
+• "회의 이벤트 추가해줘"
+• "이벤트: 프로젝트 마감"
+
+어떤 이벤트를 기록하고 싶으신가요?`;
+        }
+
+        // 이벤트 조회 명령 (새로 추가)
+        if (lowerMessage.includes('이벤트') && (lowerMessage.includes('조회') || lowerMessage.includes('목록') || lowerMessage.includes('보여') || lowerMessage.includes('찾'))) {
+            if (window.app && window.app.memories) {
+                const events = window.app.memories.filter(m => 
+                    m.type === 'event' || 
+                    (m.tags && m.tags.includes('이벤트'))
+                );
+                
+                if (events.length === 0) {
+                    return `📅 아직 기록된 이벤트가 없습니다.
+
+이벤트를 기록하려면:
+• "생일파티 이벤트 기록해줘"
+• "회의 이벤트 추가해줘"
+• "이벤트: 중요한 약속"
+
+이렇게 말씀해주세요!`;
+                }
+
+                // 날짜별로 정렬
+                events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                let response = `📅 **등록된 이벤트 목록** (총 ${events.length}개)\n\n`;
+                
+                events.slice(0, 10).forEach((event, index) => {
+                    const date = new Date(event.timestamp).toLocaleString();
+                    const importance = '⭐'.repeat(Math.min(event.importance || 5, 5));
+                    response += `**${index + 1}. ${event.content}**\n`;
+                    response += `   📅 ${date}\n`;
+                    response += `   ${importance} 중요도: ${event.importance || 5}/10\n`;
+                    if (event.tags && event.tags.length > 0) {
+                        response += `   🏷️ 태그: ${event.tags.join(', ')}\n`;
+                    }
+                    response += `\n`;
+                });
+
+                if (events.length > 10) {
+                    response += `\n... 그외 ${events.length - 10}개의 이벤트가 더 있습니다.\n`;
+                }
+
+                response += `\n🔍 **특정 이벤트 검색:**\n`;
+                response += `• "이벤트 검색: 회의"\n`;
+                response += `• "오늘 이벤트 조회"\n`;
+                response += `• "이번주 이벤트 보여줘"`;
+
+                return response;
+            }
+            return '이벤트 데이터에 접근할 수 없습니다. 앱을 새로고침해주세요.';
+        }
+
         // 메모리 저장 명령
         if (lowerMessage.includes('저장') || lowerMessage.includes('기록') || lowerMessage.includes('메모')) {
             // "xxx를 저장해줘", "xxx 기록해줘" 패턴 감지
@@ -379,6 +479,11 @@ JSON 형식으로 응답해주세요.`;
 💾 **기록 관리**
 • "xxx를 저장해줘" - 텍스트 메모 저장
 • 📸📍🎤 버튼으로 다양한 형태 기록
+
+📅 **이벤트 관리**
+• "xxx 이벤트 기록해줘" - 이벤트 저장
+• "이벤트 목록 보여줘" - 이벤트 조회
+• "이벤트 검색: xxx" - 특정 이벤트 찾기
 
 🔍 **검색 & 분석**
 • "오늘 기억 보여줘", "회의 검색해줘"

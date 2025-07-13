@@ -2,7 +2,7 @@
   "name": "2nd Brain - Standalone",
   "short_name": "2nd Brain",
   "description": "아이폰 단독 실행용 AI 기억 관리 앱",
-  "version": "1.00.01",
+  "version": "1.00.05",
   "manifest_version": 3,
   
   "start_url": "/",

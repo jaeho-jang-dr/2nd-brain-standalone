@@ -273,8 +273,13 @@ class AuthManager {
         });
     }
 
-    // 📝 로그인 모달
+    // 📝 iOS Safari 최적화된 로그인 모달
     showLoginModal() {
+        // iOS Safari 감지
+        const isIOSSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+        
+        console.log('🔐 Showing login modal (iOS Safari:', isIOSSafari, ')');
+        
         const modal = document.createElement('div');
         modal.className = 'auth-modal active';
         modal.innerHTML = `
@@ -284,21 +289,39 @@ class AuthManager {
                     <p>계속하려면 로그인이 필요합니다</p>
                 </div>
                 
-                <form class="auth-form" id="loginForm">
+                <!-- iOS Safari 최적화된 로그인 폼 -->
+                <form class="auth-form" id="loginForm" action="javascript:void(0);" novalidate>
                     <div class="form-group">
                         <label for="username">아이디</label>
-                        <input type="text" id="username" required 
-                               placeholder="아이디를 입력하세요" autocomplete="username">
+                        <input type="text" 
+                               id="username" 
+                               name="username"
+                               required 
+                               placeholder="아이디를 입력하세요" 
+                               autocomplete="username"
+                               autocapitalize="none"
+                               autocorrect="off"
+                               spellcheck="false"
+                               inputmode="text"
+                               style="font-size: 16px;">
                     </div>
                     
                     <div class="form-group">
                         <label for="password">비밀번호</label>
-                        <input type="password" id="password" required 
-                               placeholder="비밀번호를 입력하세요" autocomplete="current-password">
+                        <input type="password" 
+                               id="password" 
+                               name="password"
+                               required 
+                               placeholder="비밀번호를 입력하세요" 
+                               autocomplete="current-password"
+                               style="font-size: 16px;">
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="auth-btn primary">
+                        <button type="submit" 
+                                class="auth-btn primary" 
+                                id="loginSubmitBtn"
+                                style="min-height: 48px; font-size: 16px;">
                             🔑 로그인
                         </button>
                     </div>
@@ -318,28 +341,85 @@ class AuthManager {
         
         document.body.appendChild(modal);
         
-        // 로그인 폼 이벤트
+        // iOS Safari 최적화된 이벤트 핸들러 설정
         const loginForm = modal.querySelector('#loginForm');
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const loginButton = modal.querySelector('#loginSubmitBtn');
+        const usernameInput = modal.querySelector('#username');
+        const passwordInput = modal.querySelector('#password');
+        
+        console.log('🔧 Setting up login form events for iOS Safari compatibility');
+        
+        // 폼 제출 이벤트 (주요 핸들러)
+        if (loginForm) {
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔐 Login form submitted');
+                await this.handleLoginSubmit(modal);
+                return false;
+            });
+        }
+        
+        // iOS Safari에서 버튼 터치 이벤트 강화
+        if (loginButton) {
+            console.log('🔧 Setting up iOS Safari login button events');
             
-            const username = modal.querySelector('#username').value;
-            const password = modal.querySelector('#password').value;
+            // 모바일 호환 이벤트 리스너 사용
+            this.addMobileCompatibleEventListener(loginButton, async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔐 Login button touched/clicked');
+                await this.handleLoginSubmit(modal);
+            });
             
-            const result = await this.login(username, password);
-            
-            if (result.success) {
+            // iOS Safari에서 추가 최적화
+            if (isIOSSafari) {
+                loginButton.style.touchAction = 'manipulation';
+                loginButton.style.webkitTouchCallout = 'none';
+                loginButton.style.webkitUserSelect = 'none';
+                loginButton.style.userSelect = 'none';
+                loginButton.style.webkitTapHighlightColor = 'transparent';
+            }
+        }
+        
+        // Enter 키 처리 개선
+        if (usernameInput && passwordInput) {
+            [usernameInput, passwordInput].forEach(input => {
+                input.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        console.log('🔐 Enter key pressed in login input');
+                        await this.handleLoginSubmit(modal);
+                    }
+                });
+                
+                // iOS Safari에서 입력 필드 최적화
+                if (isIOSSafari) {
+                    input.style.webkitTouchCallout = 'default';
+                    input.style.webkitUserSelect = 'text';
+                    input.style.userSelect = 'text';
+                    input.style.touchAction = 'manipulation';
+                }
+            });
+        }
+        
+        // 모달 외부 클릭으로 닫기 (iOS Safari 호환)
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                console.log('🔐 Login modal backdrop clicked - closing');
                 modal.remove();
-                this.showToast(result.message, 'success');
-            } else {
-                this.showToast(result.message, 'error');
             }
         });
         
-        // 첫 번째 입력 필드에 포커스
+        // iOS Safari에서 첫 번째 입력 필드에 포커스 (키보드 이슈 방지)
         setTimeout(() => {
-            modal.querySelector('#username').focus();
-        }, 100);
+            if (usernameInput) {
+                usernameInput.focus();
+                console.log('🔐 Username input focused');
+            }
+        }, isIOSSafari ? 300 : 100);
+        
+        console.log('🔐 Login modal setup completed');
     }
 
     // 🔧 권한 확인
@@ -425,6 +505,155 @@ class AuthManager {
             userCount: this.users.filter(u => u.role === 'user').length,
             currentUser: this.currentUser
         };
+    }
+
+    // 🔑 iOS Safari 최적화된 로그인 처리 헬퍼 메서드
+    async handleLoginSubmit(modal) {
+        console.log('🔐 handleLoginSubmit called');
+        
+        // 중복 제출 방지
+        if (this._loginInProgress) {
+            console.log('🔐 Login already in progress, ignoring');
+            return;
+        }
+        
+        const usernameInput = modal.querySelector('#username');
+        const passwordInput = modal.querySelector('#password');
+        const loginButton = modal.querySelector('#loginSubmitBtn');
+        
+        if (!usernameInput || !passwordInput) {
+            console.error('🔐 Login inputs not found');
+            this.showToast('로그인 폼에 오류가 있습니다.', 'error');
+            return;
+        }
+        
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        
+        console.log('🔐 Login attempt:', { username, hasPassword: !!password });
+        
+        if (!username || !password) {
+            this.showToast('아이디와 비밀번호를 모두 입력해주세요.', 'warning');
+            return;
+        }
+        
+        // 로그인 진행 상태 설정
+        this._loginInProgress = true;
+        
+        // 버튼 비활성화 및 로딩 표시
+        if (loginButton) {
+            loginButton.disabled = true;
+            loginButton.textContent = '🔄 로그인 중...';
+            loginButton.style.opacity = '0.7';
+        }
+        
+        try {
+            const result = await this.login(username, password);
+            
+            console.log('🔐 Login result:', result);
+            
+            if (result.success) {
+                // 성공 시 모달 제거
+                modal.remove();
+                this.showToast(result.message, 'success');
+                console.log('🔐 Login successful, modal removed');
+            } else {
+                // 실패 시 에러 메시지 표시
+                this.showToast(result.message, 'error');
+                
+                // 버튼 복원
+                if (loginButton) {
+                    loginButton.disabled = false;
+                    loginButton.textContent = '🔑 로그인';
+                    loginButton.style.opacity = '1';
+                }
+                
+                // 비밀번호 필드 클리어 및 포커스
+                if (passwordInput) {
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            }
+        } catch (error) {
+            console.error('🔐 Login error:', error);
+            this.showToast('로그인 중 오류가 발생했습니다.', 'error');
+            
+            // 버튼 복원
+            if (loginButton) {
+                loginButton.disabled = false;
+                loginButton.textContent = '🔑 로그인';
+                loginButton.style.opacity = '1';
+            }
+        } finally {
+            // 로그인 진행 상태 해제
+            this._loginInProgress = false;
+        }
+    }
+
+    // 📱 모바일 호환 이벤트 리스너 (app.js와 동일한 로직)
+    addMobileCompatibleEventListener(element, callback) {
+        let touchStarted = false;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        // 터치 시작
+        element.addEventListener('touchstart', (e) => {
+            touchStarted = true;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            
+            // 시각적 피드백
+            element.style.transform = 'scale(0.95)';
+            element.style.opacity = '0.8';
+            
+            console.log(`🔍 Auth touch start on ${element.id || element.className}`);
+        }, { passive: false });
+        
+        // 터치 종료
+        element.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            
+            if (touchStarted) {
+                const touch = e.changedTouches[0];
+                const touchEndX = touch.clientX;
+                const touchEndY = touch.clientY;
+                
+                const moveDistance = Math.sqrt(
+                    Math.pow(touchEndX - touchStartX, 2) + 
+                    Math.pow(touchEndY - touchStartY, 2)
+                );
+                
+                if (moveDistance < 15) {
+                    console.log(`✅ Auth touch end - executing callback`);
+                    callback(e);
+                } else {
+                    console.log(`❌ Auth touch moved too much (${moveDistance}px)`);
+                }
+                
+                touchStarted = false;
+            }
+            
+            // 시각적 피드백 제거
+            element.style.transform = '';
+            element.style.opacity = '';
+        }, { passive: false });
+        
+        // 터치 취소
+        element.addEventListener('touchcancel', () => {
+            touchStarted = false;
+            element.style.transform = '';
+            element.style.opacity = '';
+            console.log(`🚫 Auth touch cancelled`);
+        });
+        
+        // 데스크톱 클릭 이벤트
+        element.addEventListener('click', (e) => {
+            if (!('ontouchstart' in window) || !touchStarted) {
+                console.log(`🖱️ Auth click event`);
+                callback(e);
+            }
+        });
     }
 }
 

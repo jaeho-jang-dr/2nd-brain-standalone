@@ -36,53 +36,53 @@ class AdminManager {
     }
 
     setupAdminEventListeners() {
-        // 관리자 UI 요소들의 이벤트만 처리 (설정 버튼은 app.js에서 처리)
-        // 관리자 버튼이 있다면 이벤트 연결
-        const adminBtn = document.getElementById('adminBtn');
-        if (adminBtn) {
-            adminBtn.addEventListener('click', () => {
-                this.openAdminDashboard();
-            });
-        }
+        // 관리자 UI 요소들의 이벤트만 처리 (설정 버튼과 관리자 버튼은 app.js에서 처리)
+        // 관리자 버튼 이벤트는 app.js의 setupEventListeners()에서 모바일 호환성과 함께 처리됨
+        console.log('🎛️ 관리자 이벤트 리스너 설정 완료 - adminBtn은 app.js에서 처리됨');
     }
 
-    // 일반 사용자 설정 표시
+    // iOS Safari 최적화된 일반 사용자 설정 표시
     showUserSettings() {
+        console.log('⚙️ Showing user settings modal');
+        
+        // iOS Safari 감지
+        const isIOSSafari = /iPhone|iPad|iPod/.test(navigator.userAgent) && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS/.test(navigator.userAgent);
+        
         const modal = document.createElement('div');
         modal.className = 'modal active';
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">⚙️ 설정</h3>
-                    <button class="close-btn" onclick="this.closest('.modal').remove()">&times;</button>
+                    <button class="close-btn" id="settingsCloseBtn">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="settings-section">
                         <h4>🔧 앱 설정</h4>
                         <div class="setting-item">
                             <label>언어 설정</label>
-                            <select id="languageSetting">
+                            <select id="languageSetting" style="font-size: 16px;">
                                 <option value="ko-KR">한국어</option>
                                 <option value="en-US">English</option>
                             </select>
                         </div>
                         <div class="setting-item">
                             <label>
-                                <input type="checkbox" id="autoTranscription" checked> 
+                                <input type="checkbox" id="autoTranscription" checked style="min-width: 20px; min-height: 20px;"> 
                                 자동 음성 변환
                             </label>
                         </div>
                         <div class="setting-item">
                             <label>
-                                <input type="checkbox" id="locationTracking"> 
+                                <input type="checkbox" id="locationTracking" style="min-width: 20px; min-height: 20px;"> 
                                 위치 추적 허용
                             </label>
                         </div>
                     </div>
                     <div class="settings-section">
                         <h4>💾 데이터</h4>
-                        <button class="btn secondary" onclick="adminManager.app.exportUserData()">📤 내 데이터 내보내기</button>
-                        <button class="btn danger" onclick="adminManager.app.clearUserData()">🗑️ 내 데이터 삭제</button>
+                        <button class="btn secondary" id="exportUserDataBtn" style="min-height: 44px; font-size: 16px; margin-bottom: 10px;">📤 내 데이터 내보내기</button>
+                        <button class="btn danger" id="clearUserDataBtn" style="min-height: 44px; font-size: 16px;">🗑️ 내 데이터 삭제</button>
                     </div>
                     <div class="settings-section">
                         <h4>ℹ️ 정보</h4>
@@ -94,7 +94,103 @@ class AdminManager {
         `;
         
         document.body.appendChild(modal);
+        
+        // iOS Safari 최적화된 이벤트 핸들러 설정
+        this.setupUserSettingsEvents(modal, isIOSSafari);
         this.updateUserStorageInfo();
+        
+        console.log('⚙️ User settings modal created with iOS Safari optimization');
+    }
+    
+    // iOS Safari 최적화된 사용자 설정 이벤트 핸들러
+    setupUserSettingsEvents(modal, isIOSSafari) {
+        console.log('🔧 Setting up user settings events (iOS Safari:', isIOSSafari, ')');
+        
+        // 닫기 버튼
+        const closeBtn = modal.querySelector('#settingsCloseBtn');
+        if (closeBtn) {
+            if (window.app && window.app.addMobileCompatibleEventListener) {
+                window.app.addMobileCompatibleEventListener(closeBtn, () => {
+                    console.log('⚙️ Settings close button clicked');
+                    modal.remove();
+                });
+            } else {
+                closeBtn.addEventListener('click', () => {
+                    console.log('⚙️ Settings close button clicked (fallback)');
+                    modal.remove();
+                });
+            }
+        }
+        
+        // 데이터 내보내기 버튼
+        const exportBtn = modal.querySelector('#exportUserDataBtn');
+        if (exportBtn) {
+            if (window.app && window.app.addMobileCompatibleEventListener) {
+                window.app.addMobileCompatibleEventListener(exportBtn, () => {
+                    console.log('⚙️ Export user data button clicked');
+                    if (this.app && this.app.exportUserData) {
+                        this.app.exportUserData();
+                    }
+                });
+            } else {
+                exportBtn.addEventListener('click', () => {
+                    console.log('⚙️ Export user data button clicked (fallback)');
+                    if (this.app && this.app.exportUserData) {
+                        this.app.exportUserData();
+                    }
+                });
+            }
+        }
+        
+        // 데이터 삭제 버튼
+        const clearBtn = modal.querySelector('#clearUserDataBtn');
+        if (clearBtn) {
+            if (window.app && window.app.addMobileCompatibleEventListener) {
+                window.app.addMobileCompatibleEventListener(clearBtn, () => {
+                    console.log('⚙️ Clear user data button clicked');
+                    if (this.app && this.app.clearUserData) {
+                        this.app.clearUserData();
+                    }
+                });
+            } else {
+                clearBtn.addEventListener('click', () => {
+                    console.log('⚙️ Clear user data button clicked (fallback)');
+                    if (this.app && this.app.clearUserData) {
+                        this.app.clearUserData();
+                    }
+                });
+            }
+        }
+        
+        // 모달 외부 클릭으로 닫기
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                console.log('⚙️ Settings modal backdrop clicked - closing');
+                modal.remove();
+            }
+        });
+        
+        // iOS Safari에서 버튼 최적화
+        if (isIOSSafari) {
+            const buttons = modal.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.style.touchAction = 'manipulation';
+                button.style.webkitTouchCallout = 'none';
+                button.style.webkitUserSelect = 'none';
+                button.style.userSelect = 'none';
+                button.style.webkitTapHighlightColor = 'transparent';
+            });
+            
+            const inputs = modal.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.style.touchAction = 'manipulation';
+                if (input.type !== 'checkbox') {
+                    input.style.webkitTouchCallout = 'default';
+                    input.style.webkitUserSelect = 'text';
+                    input.style.userSelect = 'text';
+                }
+            });
+        }
     }
 
     // 관리자 설정 표시 (기존 기능 유지하면서 확장)

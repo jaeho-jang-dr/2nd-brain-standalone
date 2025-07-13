@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="2nd Brain Admin">
+    <meta name="theme-color" content="#1a1a1a">
+    
+    <title>👑 2nd Brain - 관리자 대시보드</title>
+    
+    <style>
+        /* 🎨 관리자 전용 스타일 */
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #FF9500;
+            --success-color: #34C759;
+            --danger-color: #FF3B30;
+            --warning-color: #FF9500;
+            --background-dark: #000000;
+            --background-card: #1C1C1E;
+            --background-secondary: #2C2C2E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E8E93;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --safe-area-top: env(safe-area-inset-top);
+            --safe-area-bottom: env(safe-area-inset-bottom);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 관리자 헤더 */
+        .admin-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+            padding: calc(var(--safe-area-top) + 10px) 20px 10px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-title h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .header-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .header-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .header-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .header-btn.danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        /* 메인 컨테이너 */
+        .admin-container {
+            padding-top: 80px;
+            padding-bottom: calc(var(--safe-area-bottom) + 20px);
+            min-height: 100vh;
+        }
+
+        /* 탭 네비게이션 */
+        .admin-tabs {
+            display: flex;
+            padding: 20px;
+            gap: 10px;
+            overflow-x: auto;
+            background: var(--background-card);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .admin-tab {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .admin-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* 탭 콘텐츠 */
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 통계 카드 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--background-card);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 데이터 테이블 */
+        .data-section {
+            background: var(--background-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .section-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th {
+            background: var(--background-secondary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .data-table td {
+            font-size: 13px;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* 버튼 스타일 */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn.secondary {
+            background: var(--background-secondary);
+            color: var(--text-primary);
+        }
+
+        .btn.danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn.success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 검색 및 필터 */
+        .filter-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--background-secondary);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* 모달 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--background-card);
+            border-radius: 20px;
+            margin: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 0 20px 20px;
+        }
+
+        /* 폼 스타일 */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--background-secondary);
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* AI 채팅 팝업 */
+        .ai-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--background-card);
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 400px;
+            width: 90%;
+            max-height: 70vh;
+            overflow-y: auto;
+            z-index: 3000;
+            border: 2px solid var(--primary-color);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .ai-popup.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .ai-response {
+            background: var(--background-secondary);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .copy-btn {
+            margin-top: 10px;
+            padding: 8px 15px;
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 로딩 */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .filter-section {
+                flex-direction: column;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px;
+            }
+        }
+
+        /* 페이지네이션 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .page-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--background-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .page-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .page-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- 관리자 헤더 -->
+    <header class="admin-header">
+        <div class="header-content">
+            <div class="admin-title">
+                <span>👑</span>
+                <h1>2nd Brain 관리자</h1>
+            </div>
+            <div class="header-actions">
+                <button class="header-btn primary" id="homeBtn">🏠 메인으로</button>
+                <button class="header-btn" id="aiChatBtn">🧠 AI 채팅</button>
+                <button class="header-btn" id="changePasswordBtn">🔑 비밀번호 변경</button>
+                <button class="header-btn danger" id="logoutBtn">🚪 로그아웃</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨테이너 -->
+    <main class="admin-container">
+        <!-- 탭 네비게이션 -->
+        <nav class="admin-tabs">
+            <button class="admin-tab active" data-tab="dashboard">📊 대시보드</button>
+            <button class="admin-tab" data-tab="data-browser">🔍 데이터 탐색</button>
+            <button class="admin-tab" data-tab="memory-manager">💾 메모리 관리</button>
+            <button class="admin-tab" data-tab="user-manager">👥 사용자 관리</button>
+            <button class="admin-tab" data-tab="system-settings">⚙️ 시스템 설정</button>
+        </nav>
+
+        <!-- 대시보드 탭 -->
+        <div class="tab-content active" id="dashboard-tab">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">💾</div>
+                    <div class="stat-number" id="totalMemories">0</div>
+                    <div class="stat-label">총 메모리</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-number" id="todayMemories">0</div>
+                    <div class="stat-label">오늘 추가</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-number" id="totalUsers">0</div>
+                    <div class="stat-label">총 사용자</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💽</div>
+                    <div class="stat-number" id="storageUsed">0MB</div>
+                    <div class="stat-label">사용 용량</div>
+                </div>
+            </div>
+
+            <div class="data-section">
+                <div class="section-header">
+                    <h2 class="section-title">📈 최근 활동</h2>
+                    <button class="btn primary" id="refreshStats">새로고침</button>
+                </div>
+                <div id="recentActivity"></div>
+            </div>
+        </div>
+
+        <!-- 데이터 탐색 탭 -->
+        <div class="tab-content" id="data-browser-tab">
+            <div class="filter-section">
+                <div class="filter-group">
+                    <label>검색어</label>
+                    <input type="text" class="filter-input" id="searchInput" placeholder="내용 검색...">
+                </div>
+                <div class="filter-group">
+                    <label>타입</label>
+                    <select class="filter-input" id="typeFilter">
+                        <option value="">전체</option>
+                        <option value="text">텍스트</option>
+                        <option value="voice">음성</option>
+                        <option value="photo">사진</option>
+                        <option value="video">영상</option>
+                        <option value="location">위치</option>
+                        <option value="document">문서</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>날짜</label>
+                    <input type="date" class="filter-input" id="dateFilter">
+                </div>
+                <div class="filter-group">
+                    <label>중요도</label>
+                    <select class="filter-input" id="importanceFilter">
+                        <option value="">전체</option>
+                        <option value="9">매우 높음 (9-10)</option>
+                        <option value="7">높음 (7-8)</option>
+                        <option value="5">보통 (5-6)</option>
+                        <option value="3">낮음 (3-4)</option>
+                        <option value="1">매우 낮음 (1-2)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="btn primary" id="searchBtn">🔍 검색</button>
+                </div>
+            </div>
+
+            <div class="data-section">
+                <div class="section-header">
+                    <h2 class="section-title">검색 결과</h2>
+                    <div class="section-actions">
+                        <button class="btn secondary" id="exportDataBtn">📤 내보내기</button>
+                        <button class="btn danger" id="deleteSelectedBtn">🗑️ 선택 삭제</button>
+                    </div>
+                </div>
+                <div id="searchResults"></div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+
+        <!-- 메모리 관리 탭 -->
+        <div class="tab-content" id="memory-manager-tab">
+            <div class="data-section">
+                <div class="section-header">
+                    <h2 class="section-title">💾 메모리 데이터베이스</h2>
+                    <div class="section-actions">
+                        <button class="btn primary" id="addMemoryBtn">➕ 메모리 추가</button>
+                        <button class="btn secondary" id="backupBtn">💾 백업</button>
+                        <button class="btn danger" id="clearAllBtn">🗑️ 전체 삭제</button>
+                    </div>
+                </div>
+                <div id="memoryList"></div>
+            </div>
+        </div>
+
+        <!-- 사용자 관리 탭 -->
+        <div class="tab-content" id="user-manager-tab">
+            <div class="data-section">
+                <div class="section-header">
+                    <h2 class="section-title">👥 사용자 관리</h2>
+                    <div class="section-actions">
+                        <button class="btn primary" id="addUserBtn">👤 사용자 추가</button>
+                    </div>
+                </div>
+                <div id="userList"></div>
+            </div>
+        </div>
+
+        <!-- 시스템 설정 탭 -->
+        <div class="tab-content" id="system-settings-tab">
+            <div class="data-section">
+                <div class="section-header">
+                    <h2 class="section-title">⚙️ 시스템 설정</h2>
+                    <button class="btn success" id="saveSettingsBtn">💾 설정 저장</button>
+                </div>
+                <div id="systemSettings"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 비밀번호 변경 모달 -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🔑 비밀번호 변경</h3>
+                <button class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label>현재 비밀번호</label>
+                        <input type="password" class="form-input" id="currentPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호</label>
+                        <input type="password" class="form-input" id="newPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호 확인</label>
+                        <input type="password" class="form-input" id="confirmPassword" required>
+                    </div>
+                    <button type="submit" class="btn primary" style="width: 100%;">비밀번호 변경</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI 채팅 팝업 -->
+    <div class="ai-popup" id="aiPopup">
+        <div class="modal-header">
+            <h3 class="modal-title">🧠 Claude AI 채팅</h3>
+            <button class="close-btn" id="closeAiPopup">&times;</button>
+        </div>
+        <div class="form-group">
+            <label>질문을 입력하세요</label>
+            <textarea class="form-input" id="aiQuestion" rows="3" placeholder="예: 오늘 저장된 데이터를 분석해줘"></textarea>
+        </div>
+        <button class="btn primary" id="askAiBtn" style="width: 100%; margin-bottom: 15px;">🤖 AI에게 질문하기</button>
+        <div id="aiResponseArea"></div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="auth.js"></script>
+    <script src="claude-ai.js"></script>
+    <script src="data-manager.js"></script>
+    <script src="admin-dashboard.js"></script>
+</body>
+</html>

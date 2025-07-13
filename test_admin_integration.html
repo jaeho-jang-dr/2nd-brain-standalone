@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass { background: #28a745; }
+        .fail { background: #dc3545; }
+        .warning { background: #ffc107; color: #000; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        #testOutput {
+            background: #000;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 2nd Brain Admin Menu Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>🔧 Test Controls</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="testSettingsButtonDelegation()">Test Settings Button</button>
+        <button onclick="testAdminModalContent()">Test Admin Modal</button>
+        <button onclick="testUserModalContent()">Test User Modal</button>
+        <button onclick="testAdminDashboardLink()">Test Dashboard Link</button>
+        <button onclick="testDataExportFunctions()">Test Export Functions</button>
+        <button onclick="clearTestOutput()">Clear Output</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Test Results</h2>
+        <div id="testOutput">Test output will appear here...\n</div>
+    </div>
+
+    <!-- Include the main app files -->
+    <script src="auth.js"></script>
+    <script src="admin.js"></script>
+    <script src="data-manager.js"></script>
+    <script>
+        // Test framework
+        let testResults = [];
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('testOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'pass' ? '✅' : type === 'fail' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️';
+            output.textContent += `[${timestamp}] ${icon} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearTestOutput() {
+            document.getElementById('testOutput').textContent = '';
+            testResults = [];
+        }
+        
+        // Initialize test environment
+        let authManager, adminManager, app;
+        
+        function initializeTestEnvironment() {
+            log('Initializing test environment...');
+            
+            try {
+                // Mock app object
+                app = {
+                    memories: [
+                        { id: '1', type: 'text', content: 'Test memory 1', timestamp: new Date().toISOString() },
+                        { id: '2', type: 'voice', content: 'Test memory 2', timestamp: new Date().toISOString() }
+                    ],
+                    settings: { language: 'ko-KR' },
+                    showToast: (msg, type) => log(`Toast: ${msg}`, type),
+                    updateUI: () => log('UI updated'),
+                    saveMemories: () => log('Memories saved'),
+                    exportUserData: () => log('User data exported'),
+                    clearUserData: () => log('User data cleared'),
+                    createBackup: () => log('Backup created'),
+                    getTypeEmoji: (type) => type === 'text' ? '📝' : '🎤'
+                };
+                
+                // Initialize auth manager
+                authManager = new AuthManager();
+                
+                // Initialize admin manager
+                adminManager = new AdminManager(authManager, app);
+                
+                // Set global references
+                window.adminManager = adminManager;
+                window.app = app;
+                
+                log('Test environment initialized successfully', 'pass');
+                return true;
+            } catch (error) {
+                log(`Failed to initialize test environment: ${error.message}`, 'fail');
+                return false;
+            }
+        }
+        
+        function testSettingsButtonDelegation() {
+            log('🔧 Testing settings button delegation...');
+            
+            try {
+                // Create mock settings button
+                const settingsBtn = document.createElement('button');
+                settingsBtn.id = 'settingsBtn';
+                document.body.appendChild(settingsBtn);
+                
+                // Test case 1: User not logged in
+                authManager.isLoggedIn = false;
+                authManager.currentUser = null;
+                
+                let showSettingsModalCalled = false;
+                app.showSettingsModal = () => {
+                    showSettingsModalCalled = true;
+                    log('showSettingsModal called for non-logged user');
+                };
+                
+                settingsBtn.click();
+                
+                if (showSettingsModalCalled) {
+                    log('✅ Settings button correctly delegates to showSettingsModal for non-logged users', 'pass');
+                } else {
+                    log('❌ Settings button failed to delegate for non-logged users', 'fail');
+                }
+                
+                // Test case 2: Regular user logged in
+                authManager.isLoggedIn = true;
+                authManager.currentUser = { role: 'user', name: 'Test User' };
+                authManager.hasPermission = (role) => role === 'user';
+                
+                let showUserSettingsCalled = false;
+                adminManager.showUserSettings = () => {
+                    showUserSettingsCalled = true;
+                    log('showUserSettings called for regular user');
+                };
+                
+                settingsBtn.click();
+                
+                if (showUserSettingsCalled) {
+                    log('✅ Settings button correctly delegates to showUserSettings for regular users', 'pass');
+                } else {
+                    log('❌ Settings button failed to delegate for regular users', 'fail');
+                }
+                
+                // Test case 3: Admin user logged in
+                authManager.currentUser = { role: 'admin', name: 'Admin User' };
+                authManager.hasPermission = (role) => true; // Admin has all permissions
+                
+                let showAdminSettingsCalled = false;
+                adminManager.showAdminSettings = () => {
+                    showAdminSettingsCalled = true;
+                    log('showAdminSettings called for admin user');
+                };
+                
+                settingsBtn.click();
+                
+                if (showAdminSettingsCalled) {
+                    log('✅ Settings button correctly delegates to showAdminSettings for admin users', 'pass');
+                } else {
+                    log('❌ Settings button failed to delegate for admin users', 'fail');
+                }
+                
+                // Cleanup
+                settingsBtn.remove();
+                
+            } catch (error) {
+                log(`Settings button delegation test failed: ${error.message}`, 'fail');
+            }
+        }
+        
+        function testAdminModalContent() {
+            log('👑 Testing admin settings modal content...');
+            
+            try {
+                // Set admin user
+                authManager.isLoggedIn = true;
+                authManager.currentUser = { role: 'admin', name: 'Admin User' };
+                authManager.hasPermission = (role) => true;
+                
+                // Show admin settings modal
+                adminManager.showAdminSettings();
+                
+                // Check if modal was created
+                const modal = document.querySelector('.modal');
+                if (!modal) {
+                    log('❌ Admin settings modal was not created', 'fail');
+                    return;
+                }
+                
+                // Check modal title
+                const title = modal.querySelector('.modal-title');
+                if (title && title.textContent.includes('관리자 설정')) {
+                    log('✅ Admin modal has correct title', 'pass');
+                } else {
+                    log('❌ Admin modal title is incorrect', 'fail');
+                }
+                
+                // Check for admin dashboard button
+                const dashboardBtn = modal.querySelector('button[onclick*="admin-dashboard.html"]');
+                if (dashboardBtn) {
+                    log('✅ Admin dashboard button found in modal', 'pass');
+                } else {
+                    log('❌ Admin dashboard button not found in modal', 'fail');
+                }
+                
+                // Check for backup button
+                const backupBtn = modal.querySelector('button[onclick*="createBackup"]');
+                if (backupBtn) {
+                    log('✅ Backup button found in modal', 'pass');
+                } else {
+                    log('❌ Backup button not found in modal', 'fail');
+                }
+                
+                // Check for data summary button
+                const summaryBtn = modal.querySelector('button[onclick*="showDataSummary"]');
+                if (summaryBtn) {
+                    log('✅ Data summary button found in modal', 'pass');
+                } else {
+                    log('❌ Data summary button not found in modal', 'fail');
+                }
+                
+                // Check for quick stats
+                const quickStats = modal.querySelector('.quick-stats');
+                if (quickStats) {
+                    log('✅ Quick stats section found in modal', 'pass');
+                } else {
+                    log('❌ Quick stats section not found in modal', 'fail');
+                }
+                
+                // Cleanup
+                modal.remove();
+                
+            } catch (error) {
+                log(`Admin modal content test failed: ${error.message}`, 'fail');
+            }
+        }
+        
+        function testUserModalContent() {
+            log('👤 Testing user settings modal content...');
+            
+            try {
+                // Set regular user
+                authManager.isLoggedIn = true;
+                authManager.currentUser = { role: 'user', name: 'Regular User' };
+                authManager.hasPermission = (role) => role === 'user';
+                
+                // Show user settings modal
+                adminManager.showUserSettings();
+                
+                // Check if modal was created
+                const modal = document.querySelector('.modal');
+                if (!modal) {
+                    log('❌ User settings modal was not created', 'fail');
+                    return;
+                }
+                
+                // Check modal title
+                const title = modal.querySelector('.modal-title');
+                if (title && title.textContent.includes('설정') && !title.textContent.includes('관리자')) {
+                    log('✅ User modal has correct title', 'pass');
+                } else {
+                    log('❌ User modal title is incorrect', 'fail');
+                }
+                
+                // Check for language setting
+                const languageSelect = modal.querySelector('#languageSetting');
+                if (languageSelect) {
+                    log('✅ Language setting found in user modal', 'pass');
+                } else {
+                    log('❌ Language setting not found in user modal', 'fail');
+                }
+                
+                // Check for data export button (user version)
+                const exportBtn = modal.querySelector('button[onclick*="exportUserData"]');
+                if (exportBtn) {
+                    log('✅ User data export button found in modal', 'pass');
+                } else {
+                    log('❌ User data export button not found in modal', 'fail');
+                }
+                
+                // Check for user data delete button
+                const deleteBtn = modal.querySelector('button[onclick*="clearUserData"]');
+                if (deleteBtn) {
+                    log('✅ User data delete button found in modal', 'pass');
+                } else {
+                    log('❌ User data delete button not found in modal', 'fail');
+                }
+                
+                // Check that admin features are NOT present
+                const dashboardBtn = modal.querySelector('button[onclick*="admin-dashboard.html"]');
+                if (!dashboardBtn) {
+                    log('✅ Admin dashboard button correctly excluded from user modal', 'pass');
+                } else {
+                    log('❌ Admin dashboard button incorrectly included in user modal', 'fail');
+                }
+                
+                // Cleanup
+                modal.remove();
+                
+            } catch (error) {
+                log(`User modal content test failed: ${error.message}`, 'fail');
+            }
+        }
+        
+        function testAdminDashboardLink() {
+            log('🔗 Testing admin dashboard link functionality...');
+            
+            try {
+                // Set admin user
+                authManager.isLoggedIn = true;
+                authManager.currentUser = { role: 'admin', name: 'Admin User' };
+                authManager.hasPermission = (role) => true;
+                
+                // Mock window.location
+                let redirectUrl = '';
+                const originalLocation = window.location;
+                delete window.location;
+                window.location = { 
+                    href: '',
+                    set href(url) { redirectUrl = url; }
+                };
+                
+                // Test openAdminDashboard method
+                adminManager.openAdminDashboard();
+                
+                if (redirectUrl === 'admin-dashboard.html') {
+                    log('✅ Admin dashboard link redirects correctly', 'pass');
+                } else {
+                    log(`❌ Admin dashboard link redirects to incorrect URL: ${redirectUrl}`, 'fail');
+                }
+                
+                // Restore original location
+                window.location = originalLocation;
+                
+            } catch (error) {
+                log(`Admin dashboard link test failed: ${error.message}`, 'fail');
+            }
+        }
+        
+        function testDataExportFunctions() {
+            log('📤 Testing data export/backup functions...');
+            
+            try {
+                // Mock document.createElement for download link
+                let downloadTriggered = false;
+                let downloadFileName = '';
+                const originalCreateElement = document.createElement;
+                document.createElement = function(tagName) {
+                    if (tagName === 'a') {
+                        return {
+                            href: '',
+                            download: '',
+                            click: function() {
+                                downloadTriggered = true;
+                                downloadFileName = this.download;
+                                log(`Download triggered: ${this.download}`);
+                            }
+                        };
+                    }
+                    return originalCreateElement.call(document, tagName);
+                };
+                
+                // Mock URL.createObjectURL
+                window.URL.createObjectURL = () => 'blob:test-url';
+                
+                // Test user data export
+                downloadTriggered = false;
+                app.exportUserData();
+                
+                if (downloadTriggered && downloadFileName.includes('my_2nd_brain_data_')) {
+                    log('✅ User data export function works correctly', 'pass');
+                } else {
+                    log('❌ User data export function failed', 'fail');
+                }
+                
+                // Test backup creation
+                downloadTriggered = false;
+                app.createBackup();
+                
+                if (downloadTriggered && downloadFileName.includes('2nd_brain_backup_')) {
+                    log('✅ Backup creation function works correctly', 'pass');
+                } else {
+                    log('❌ Backup creation function failed', 'fail');
+                }
+                
+                // Test admin memory export
+                downloadTriggered = false;
+                adminManager.exportMemories();
+                
+                if (downloadTriggered && downloadFileName.includes('2nd_brain_memories_')) {
+                    log('✅ Admin memory export function works correctly', 'pass');
+                } else {
+                    log('❌ Admin memory export function failed', 'fail');
+                }
+                
+                // Restore original functions
+                document.createElement = originalCreateElement;
+                
+            } catch (error) {
+                log(`Data export functions test failed: ${error.message}`, 'fail');
+            }
+        }
+        
+        function runAllTests() {
+            clearTestOutput();
+            log('🚀 Starting comprehensive admin menu integration tests...');
+            
+            if (!initializeTestEnvironment()) {
+                log('❌ Cannot proceed with tests - environment initialization failed', 'fail');
+                return;
+            }
+            
+            testSettingsButtonDelegation();
+            testAdminModalContent();
+            testUserModalContent();
+            testAdminDashboardLink();
+            testDataExportFunctions();
+            
+            log('🏁 All tests completed!');
+            
+            // Summary
+            const passCount = (document.getElementById('testOutput').textContent.match(/✅/g) || []).length;
+            const failCount = (document.getElementById('testOutput').textContent.match(/❌/g) || []).length;
+            
+            log(`\n📊 Test Summary: ${passCount} passed, ${failCount} failed`);
+            
+            if (failCount === 0) {
+                log('🎉 All tests passed! Admin integration is working correctly.', 'pass');
+            } else {
+                log('⚠️ Some tests failed. Please review the implementation.', 'warning');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Test page loaded successfully');
+            log('Click "Run All Tests" to start testing the admin menu integration');
+        });
+    </script>
+</body>
+</html>

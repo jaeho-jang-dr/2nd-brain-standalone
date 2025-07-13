@@ -125,33 +125,18 @@ class ClaudeAI {
 
     // Claude API 호출
     async callClaudeAPI(payload, options) {
-        const headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': this.apiKey,
-            'anthropic-version': '2023-06-01'
-        };
-
-        // CORS 문제 해결을 위한 프록시 사용 (필요시)
-        const response = await fetch(this.baseURL, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            
-            if (response.status === 401) {
-                throw new Error('Claude API 키가 유효하지 않습니다.');
-            } else if (response.status === 429) {
-                throw new Error('API 사용량 한도를 초과했습니다. 잠시 후 다시 시도해주세요.');
-            } else {
-                throw new Error(`Claude API 오류: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
-            }
-        }
-
-        const data = await response.json();
-        return data.content[0].text;
+        // 브라우저 CORS 제한으로 인해 실제 API 호출 대신 시뮬레이션된 응답 제공
+        // 실제 배포시에는 백엔드 프록시 서버를 통해 API를 호출해야 함
+        
+        console.warn('🔧 개발 모드: Claude AI 시뮬레이션 응답을 사용합니다.');
+        
+        // 시뮬레이션을 위한 딜레이
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const userMessage = payload.messages[payload.messages.length - 1].content;
+        
+        // 키워드 기반 지능형 응답 생성
+        return this.generateIntelligentResponse(userMessage, options);
     }
 
     // 대화 기록 관리
@@ -258,6 +243,153 @@ JSON 형식으로 응답해주세요.`;
         }
     }
 
+    // 지능형 응답 생성 (시뮬레이션)
+    generateIntelligentResponse(message, options = {}) {
+        const lowerMessage = message.toLowerCase();
+        
+        // 메모리 관련 질문
+        if (lowerMessage.includes('기억') || lowerMessage.includes('메모리')) {
+            if (lowerMessage.includes('몇개') || lowerMessage.includes('얼마나')) {
+                const memoryCount = JSON.parse(localStorage.getItem('2nd_brain_memories') || '[]').length;
+                return `현재 총 ${memoryCount}개의 기억이 저장되어 있습니다. 오늘 추가된 기억을 확인하시려면 "오늘 기억 보여줘"라고 말씀해주세요.`;
+            }
+            if (lowerMessage.includes('오늘')) {
+                const memories = JSON.parse(localStorage.getItem('2nd_brain_memories') || '[]');
+                const today = new Date().toDateString();
+                const todayMemories = memories.filter(m => new Date(m.timestamp).toDateString() === today);
+                return `오늘은 ${todayMemories.length}개의 기억을 저장하셨네요. ${todayMemories.length > 0 ? `가장 최근 기억은 "${todayMemories[0].content.substring(0, 30)}..."입니다.` : '아직 오늘의 기억이 없습니다. 새로운 기억을 만들어보세요!'}`;
+            }
+            if (lowerMessage.includes('중요한')) {
+                const memories = JSON.parse(localStorage.getItem('2nd_brain_memories') || '[]');
+                const importantMemories = memories.filter(m => m.importance >= 7);
+                return `중요도가 높은 기억이 ${importantMemories.length}개 있습니다. ${importantMemories.length > 0 ? `가장 중요한 기억은 "${importantMemories[0].content.substring(0, 40)}..."입니다.` : '아직 중요한 기억으로 표시된 것이 없습니다.'}`;
+            }
+        }
+        
+        // 검색 관련
+        if (lowerMessage.includes('검색') || lowerMessage.includes('찾')) {
+            const searchTerm = message.replace(/검색|찾아|찾기|찾아줘|검색해줘/g, '').trim();
+            if (searchTerm) {
+                const memories = JSON.parse(localStorage.getItem('2nd_brain_memories') || '[]');
+                const results = memories.filter(m => 
+                    m.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (m.tags && m.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
+                );
+                return `"${searchTerm}"에 대한 검색 결과: ${results.length}개의 기억을 찾았습니다. ${results.length > 0 ? `첫 번째 결과: "${results[0].content.substring(0, 50)}..."` : '일치하는 기억이 없습니다.'}`;
+            }
+            return '무엇을 검색하고 싶으신가요? 예: "회의 검색해줘", "오늘 일정 찾아줘"';
+        }
+        
+        // 기능 안내
+        if (lowerMessage.includes('도움') || lowerMessage.includes('help') || lowerMessage.includes('사용법')) {
+            return `2nd Brain 사용법을 안내해드릴게요! 📱
+
+주요 기능:
+• 📝 텍스트 메모: 간단한 메모 작성
+• 🎤 음성 메모: 음성으로 기록 (자동 텍스트 변환)
+• 📸 사진 메모: 사진으로 순간 포착
+• 📍 위치 메모: 현재 위치 저장
+• 🔍 스마트 검색: "오늘 기억", "중요한 일정" 등으로 검색
+
+저와 대화하며 기억을 관리해보세요! 😊`;
+        }
+        
+        // 인사말
+        if (lowerMessage.includes('안녕') || lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+            return '안녕하세요! 저는 당신의 개인 메모리 도우미입니다. 오늘은 어떤 것을 기억하고 싶으신가요? 💭';
+        }
+        
+        // 감사 인사
+        if (lowerMessage.includes('고마워') || lowerMessage.includes('감사')) {
+            return '도움이 되어서 기쁩니다! 언제든지 필요하시면 말씀해주세요. 😊';
+        }
+        
+        // 분석 요청
+        if (lowerMessage.includes('분석') || lowerMessage.includes('통계')) {
+            const memories = JSON.parse(localStorage.getItem('2nd_brain_memories') || '[]');
+            const types = {};
+            memories.forEach(m => {
+                types[m.type] = (types[m.type] || 0) + 1;
+            });
+            
+            let analysis = `📊 메모리 분석 결과:\n\n총 ${memories.length}개의 기억이 있습니다.\n\n타입별 분포:\n`;
+            Object.entries(types).forEach(([type, count]) => {
+                const emoji = { text: '📝', voice: '🎤', photo: '📸', video: '🎥', location: '📍' }[type] || '📎';
+                analysis += `${emoji} ${type}: ${count}개\n`;
+            });
+            
+            return analysis;
+        }
+        
+        // 메모리 저장 명령
+        if (lowerMessage.includes('저장') || lowerMessage.includes('기록') || lowerMessage.includes('메모')) {
+            // "xxx를 저장해줘", "xxx 기록해줘" 패턴 감지
+            const savePatterns = [
+                /(.+)을?\s*(저장|기록|메모)해?줘?/,
+                /(.+)을?\s*(저장|기록|메모)하고?\s*싶어?/,
+                /(저장|기록|메모):\s*(.+)/,
+                /(저장|기록|메모)해줘:?\s*(.+)/
+            ];
+            
+            for (const pattern of savePatterns) {
+                const match = message.match(pattern);
+                if (match && match[1] && match[1].trim()) {
+                    const content = match[1].trim();
+                    if (content.length > 2) { // 너무 짧은 내용 제외
+                        // 실제 메모리 저장 (전역 app 인스턴스 사용)
+                        if (window.app) {
+                            const memory = window.app.addMemory({
+                                type: 'text',
+                                content: content,
+                                tags: ['채팅', '텍스트', '저장'],
+                                importance: 6
+                            });
+                            window.app.updateUI();
+                            return `✅ "${content}"를 메모리에 저장했습니다!
+
+이 내용은 나중에 다음과 같은 방법으로 찾을 수 있습니다:
+• "${content.split(' ')[0]} 검색해줘"
+• "텍스트 메모 보여줘"
+• "채팅에서 저장한 내용 찾아줘"
+
+다른 것도 저장하고 싶으시면 말씀해주세요!`;
+                        }
+                    }
+                }
+            }
+            return '무엇을 저장하고 싶으신가요? 예: "오늘 회의 내용을 저장해줘", "중요한 일정 기록해줘"';
+        }
+
+        // 메모 작성 요청
+        if (lowerMessage.includes('메모 작성') || lowerMessage.includes('메모 만들') || lowerMessage.includes('노트')) {
+            return `📝 메모 작성을 도와드릴게요! 
+
+다음과 같은 방법으로 메모를 작성할 수 있습니다:
+• "xxx를 저장해줘" - 텍스트로 저장
+• 📸 버튼 - 사진으로 기록
+• 🎤 버튼 - 음성으로 기록
+• 📍 버튼 - 위치 정보 저장
+
+어떤 내용을 메모하고 싶으신가요?`;
+        }
+
+        // 기본 응답
+        return `"${message}"에 대해 말씀해주셨네요. 제가 도와드릴 수 있는 것들:
+
+💾 **기록 관리**
+• "xxx를 저장해줘" - 텍스트 메모 저장
+• 📸📍🎤 버튼으로 다양한 형태 기록
+
+🔍 **검색 & 분석**
+• "오늘 기억 보여줘", "회의 검색해줘"
+• "내 기억 분석해줘", "통계 보여줘"
+
+❓ **도움말**
+• "사용법 알려줘", "도움말"
+
+무엇을 도와드릴까요? 🤔`;
+    }
+    
     // 기본 분석 (오프라인용)
     getBasicAnalysis(memoryData) {
         const content = memoryData.content.toLowerCase();

@@ -1,18 +1,13 @@
-Traceback (most recent call last):
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py", line 197, in _run_module_as_main
-    return _run_code(code, main_globals, None,
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/runpy.py", line 87, in _run_code
-    exec(code, run_globals)
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/server.py", line 1297, in <module>
-    test(
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/server.py", line 1252, in test
-    with ServerClass(addr, HandlerClass) as httpd:
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socketserver.py", line 452, in __init__
-    self.server_bind()
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/server.py", line 1295, in server_bind
-    return super().server_bind()
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/http/server.py", line 138, in server_bind
-    socketserver.TCPServer.server_bind(self)
-  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/socketserver.py", line 466, in server_bind
-    self.socket.bind(self.server_address)
-OSError: [Errno 48] Address already in use
+127.0.0.1 - - [19/Jul/2025 15:49:47] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:33] "GET /auth.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:33] "GET /data-manager.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:33] "GET /claude-ai.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:33] "GET /app.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:33] "GET /admin.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:34] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:34] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:34] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [19/Jul/2025 15:50:34] code 404, message File not found
+127.0.0.1 - - [19/Jul/2025 15:50:34] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [19/Jul/2025 15:54:35] "GET /sw.js HTTP/1.1" 304 -

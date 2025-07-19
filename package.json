@@ -1,0 +1,49 @@
+{
+  "name": "2nd-brain-standalone",
+  "version": "1.0.5",
+  "description": "🧠 2nd Brain - iPhone 단독 실행용 PWA with AI Memory Assistant",
+  "main": "app.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:debug": "jest --debug",
+    "test:all": "node run-all-tests.js",
+    "test:report": "node run-all-tests.js",
+    "serve": "python3 -m http.server 8080",
+    "serve:test": "python3 -m http.server 8081"
+  },
+  "keywords": [
+    "pwa",
+    "ai",
+    "memory",
+    "claude",
+    "mobile",
+    "standalone"
+  ],
+  "author": "jaeho-jang-dr",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "@jest/globals": "^29.7.0",
+    "whatwg-fetch": "^3.6.19"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "collectCoverageFrom": [
+      "*.js",
+      "!sw.js",
+      "!tests/**",
+      "!node_modules/**"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "testMatch": [
+      "<rootDir>/tests/**/*.test.js"
+    ],
+    "moduleFileExtensions": ["js", "json"],
+    "verbose": true
+  }
+}

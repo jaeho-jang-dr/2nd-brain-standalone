@@ -43,6 +43,10 @@ class DataManager {
 
     // 📋 메모리를 인덱스에 추가
     addToIndexes(memory) {
+        if (!memory) {
+            return; // null/undefined 메모리는 건너뛰기
+        }
+        
         // 날짜별 인덱싱
         this.indexByDate(memory);
         
@@ -64,7 +68,15 @@ class DataManager {
 
     // 📅 날짜별 인덱싱
     indexByDate(memory) {
+        if (!memory || !memory.timestamp) {
+            return; // 타임스탬프가 없으면 건너뛰기
+        }
+        
         const date = new Date(memory.timestamp);
+        if (isNaN(date.getTime())) {
+            return; // 유효하지 않은 날짜면 건너뛰기
+        }
+        
         const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
         const monthKey = dateKey.substring(0, 7); // YYYY-MM
         const yearKey = dateKey.substring(0, 4); // YYYY
@@ -145,7 +157,7 @@ class DataManager {
 
     // 🤖 메모리 분류 결정
     determineMemoryClass(memory) {
-        const content = memory.content.toLowerCase();
+        const content = (memory.content || '').toLowerCase();
         const tags = memory.tags || [];
         
         // 키워드 기반 분류
